@@ -89,7 +89,11 @@ export default function Compliance() {
     } finally { setLoading(false); }
   };
 
-  const activeLists = lists ?? { banned: BANNED_STATIC, restricted: RESTRICTED_STATIC };
+  const activeLists = {
+    banned:           (lists?.banned           ?? BANNED_STATIC),
+    restricted:       (lists?.restricted       ?? RESTRICTED_STATIC),
+    license_required: (lists?.license_required ?? []),
+  };
 
   return (
     <div className="fs-panel" style={{ display:'flex', flexDirection:'column', gap:16 }}>

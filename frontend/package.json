@@ -61,6 +61,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:deploy": "vite build",
     "gen:api": "openapi-typescript ../api/openapi.yaml -o src/api/schema.d.ts",
     "typecheck": "tsc --noEmit"
   }
