@@ -1,0 +1,9 @@
+fastapi==0.123.10
+uvicorn[standard]==0.54.0
+pydantic==2.13.5
+python-dotenv==1.2.3
+httpx==0.28.1
+jsonschema==4.26.0
+psycopg2-binary==2.9.13
+google-generativeai==0.8.6
+google-adk==1.14.1

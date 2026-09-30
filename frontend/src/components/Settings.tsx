@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Languages, MapPin, Check, Loader2, Sprout, LogOut, Volume2, Mic } from 'lucide-react';
 import {

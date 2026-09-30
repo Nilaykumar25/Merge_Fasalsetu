@@ -7,6 +7,13 @@ so the server fails fast rather than crashing on the first request.
 from __future__ import annotations
 
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load .env from the project root (two levels above this file: backend/app/core → root)
+_env_path = Path(__file__).resolve().parents[3] / ".env"
+load_dotenv(_env_path)
 
 
 class ImproperlyConfigured(RuntimeError):

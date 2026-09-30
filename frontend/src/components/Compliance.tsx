@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * Compliance.tsx — Pesticide Safety & Audit Panel
  * Powered by compliance/guardrail.py + banned_pesticides.json

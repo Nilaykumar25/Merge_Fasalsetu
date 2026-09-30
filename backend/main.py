@@ -25,6 +25,7 @@ def create_app() -> FastAPI:
     from backend.app.eventlog.store import EventStore
     from backend.app.routers.chat import router as chat_router
     from backend.app.routers.health import router as health_router
+    from backend.app.routers.weather import router as weather_router
 
     app = FastAPI(
         title="FasalSetu API",
@@ -46,6 +47,7 @@ def create_app() -> FastAPI:
     # ── Routers ─────────────────────────────────────────────────────────────
     app.include_router(chat_router)
     app.include_router(health_router)
+    app.include_router(weather_router)
 
     # ── Startup: load pack and initialise store ──────────────────────────────
     @app.on_event("startup")

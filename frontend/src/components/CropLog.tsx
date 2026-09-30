@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { Plus, Calendar, Sprout, Loader2, Trash2 } from 'lucide-react';
 import { getActiveCrops, getCropStatus, deleteCropCycle, type CropCycle } from '../lib/crop-db';

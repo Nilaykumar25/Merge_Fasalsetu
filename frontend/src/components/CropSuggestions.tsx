@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { Lightbulb, ThumbsUp, Sprout, Wheat, Leaf, Loader2, Droplets, TrendingUp, Shield } from 'lucide-react';
 import { cropAdvisoryAI, FarmerContext } from '../services/cropAdvisoryAI';

@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * Disease Detection Test Component
  * Standalone component to test disease detection functionality

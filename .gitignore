@@ -6,6 +6,8 @@ node_modules/
 .env
 .env.local
 .env.*.local
+frontend/.env
+frontend/.env.local
 
 # Large data folders — not for version control
 data/
@@ -22,6 +24,13 @@ grading/models_dedup/
 # Python virtual environments
 grading/.venv/
 .venv/
+
+# Python compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
 
 # OS
 .DS_Store

@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import LandingPage from './components/LandingPage';
 import LoginSignup from './components/LoginSignup';

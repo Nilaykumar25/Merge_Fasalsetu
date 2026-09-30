@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * GovSchemes.tsx
  * Government Scheme Search — powered by ChromaDB + sentence-transformers

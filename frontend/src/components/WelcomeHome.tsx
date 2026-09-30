@@ -1,5 +1,6 @@
+import React from 'react';
 import { Plus, BookOpen, ArrowRight } from 'lucide-react';
-import fasalSetuLogo from 'figma:asset/f2d8d5eb903b36577f41dfa3a338cd5f372d0106.png';
+const fasalSetuLogo = ''; // TODO: replace with actual logo asset path
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface WelcomeHomeProps {

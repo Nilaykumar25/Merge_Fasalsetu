@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import { Mic, Volume2, VolumeX } from 'lucide-react';
 import { voiceService, AVAILABLE_VOICES } from '../services/voiceService';

@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * CalendarAlerts.tsx — Weather Panel
  * Powered by weather_agent.py via FastAPI localhost:8000
@@ -48,7 +49,8 @@ interface SprayCheck {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-function conditionIcon(condition: string) {
+function conditionIcon(condition: string | undefined) {
+  if (!condition) return '🌤️';
   const c = condition.toLowerCase();
   if (c.includes('rain') || c.includes('drizzle')) return '🌧️';
   if (c.includes('thunder')) return '⛈️';

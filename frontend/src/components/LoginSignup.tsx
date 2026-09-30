@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Phone, ArrowRight, Leaf, BarChart3, CloudSun, ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { signInWithGoogle } from '../lib/firebase';
