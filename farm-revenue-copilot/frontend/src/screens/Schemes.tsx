@@ -462,14 +462,19 @@ export default function Schemes({ navigate }: { navigate: (s: Screen) => void })
 
   // Auto-load schemes on mount if farmer profile is available
   useEffect(() => {
-    if (farmer && farmer.state) {
-      loadSchemes();
+    if (farmer?.state) {
+      setSelectedState(farmer.state);
+      loadSchemes(null, farmer.state);
     }
-  }, [farmer]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [farmer?.state]);
 
-  const loadSchemes = async (activity?: string | null) => {
-    if (!farmer) {
-      setError('Please complete your farm profile to see matched schemes');
+  const loadSchemes = async (activity?: string | null, stateOverride?: string) => {
+    // Determine the state to use: explicit override > dropdown > farmer profile
+    const stateToUse = stateOverride ?? (selectedState !== 'All India' ? selectedState : (farmer?.state || null));
+
+    if (!stateToUse) {
+      setError('Please select a state or complete your farm profile to see matched schemes');
       return;
     }
 
@@ -480,11 +485,11 @@ export default function Schemes({ navigate }: { navigate: (s: Screen) => void })
     try {
       const params = new URLSearchParams();
       
-      if (farmer.state) params.append('state', farmer.state);
-      if (farmer.district) params.append('district', farmer.district);
+      params.append('state', stateToUse);
+      if (farmer?.district) params.append('district', farmer.district);
       // Note: Add crop, landSize, season etc when available in farmer profile
       if (activity) params.append('activity', activity);
-      if (selectedCategory) params.append('activity', selectedCategory);
+      if (selectedCategory) params.append('category', selectedCategory);
 
       const response = await fetch(`${API_BASE_URL}/schemes/match?${params.toString()}`);
       
@@ -503,11 +508,11 @@ export default function Schemes({ navigate }: { navigate: (s: Screen) => void })
   };
 
   const handleQuickSearch = (activity: string | null) => {
-    loadSchemes(activity);
+    loadSchemes(activity, undefined);
   };
 
   const handleSearch = () => {
-    loadSchemes();
+    loadSchemes(null, undefined);
   };
 
   return (
@@ -687,23 +692,10 @@ export default function Schemes({ navigate }: { navigate: (s: Screen) => void })
           size="md"
           fullWidth
           onClick={handleSearch}
-          disabled={loading || !farmer}
+          disabled={loading}
         >
           {loading ? 'Searching...' : 'Search Schemes'}
         </Btn>
-
-        {!farmer && (
-          <div
-            style={{
-              marginTop: 12,
-              fontSize: 12,
-              color: C.amber,
-              textAlign: 'center',
-            }}
-          >
-            Complete your farm profile in Settings to see matched schemes
-          </div>
-        )}
       </Card>
 
       {/* Error */}

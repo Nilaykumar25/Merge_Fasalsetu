@@ -41,7 +41,7 @@ export default function Voice({ navigate }: { navigate: (s: Screen) => void }) {
     <div>
       <PageHeader
         title="Voice Playback"
-        subtitle="Latest message — All clear, 14 Nov 2024"
+        subtitle="Latest message — All clear, 10 Sep 2026"
         back="Messages"
         onBack={() => navigate("messages")}
         actions={<Badge color={C.sage} bg={C.sageTint}>Text-to-Speech · Google Cloud TTS</Badge>}
@@ -180,9 +180,9 @@ export default function Voice({ navigate }: { navigate: (s: Screen) => void }) {
           <div style={{ padding: "16px 18px", borderBottom: `1px solid ${C.line}`, fontSize: 12, fontWeight: 700, color: C.ink }}>Recent voice messages</div>
           {[
             { title: "All clear — no action today", time: "Today 6:12 AM", duration: "0:18", icon: "✓" },
-            { title: "Grading result: Batch #13", time: "Nov 05", duration: "0:22", icon: "⊙" },
-            { title: "Harvest window identified", time: "Nov 03", duration: "0:31", icon: "◈" },
-            { title: "Irrigation needed — 24h", time: "Oct 28 · Urgent", duration: "0:24", icon: "!" },
+            { title: "Grading result: Batch #2", time: "Sep 07", duration: "0:22", icon: "⊙" },
+            { title: "Harvest window identified", time: "Sep 06", duration: "0:31", icon: "◈" },
+            { title: "Irrigation needed — 24h", time: "Sep 05 · Urgent", duration: "0:24", icon: "!" },
           ].map(({ title, time, duration, icon }, i) => (
             <div
               key={i}

@@ -29,6 +29,8 @@ export function getDemoFarmer(authUserId: string): Farmer {
     phone: mockData.farmer.phone,
     state: mockData.farmer.state,
     district: mockData.farmer.district,
+    land_area_ac: mockData.farmer.totalArea,
+    // legacy aliases kept for UI components
     village: mockData.farmer.village,
     total_area_acres: mockData.farmer.totalArea,
     preferred_language: mockData.farmer.language,

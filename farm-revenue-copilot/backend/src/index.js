@@ -17,6 +17,7 @@ const decisionsRoutes     = require('./routes/decisions');
 const diseaseRoutes       = require('./routes/disease');
 const advisorRoutes       = require('./routes/advisor');
 const alertsRoutes        = require('./routes/alerts');
+const sensorsRoutes       = require('./routes/sensors');
 
 const app  = express();
 const PORT = process.env.PORT || 4000;
@@ -38,6 +39,7 @@ app.use('/api/decisions',       decisionsRoutes);
 app.use('/api/disease',         diseaseRoutes);
 app.use('/api/advisor',         advisorRoutes);
 app.use('/api/alerts',          alertsRoutes);
+app.use('/api/sensors',         sensorsRoutes);
 
 // ── Health check ──
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));

@@ -1,47 +1,85 @@
+/**
+ * supabaseService.ts
+ * Data layer mapped to the REAL Supabase schema.
+ *
+ * Real tables:
+ *   farmers, crops, crop_state_snapshots, recommendation_events,
+ *   grading_events, irrigation_logs, schemes, farmer_actions,
+ *   advisor_conversations, sensor_readings
+ *
+ * Non-existent tables (gracefully handled):
+ *   plots, crop_health_daily, alerts, messages, seasons, user_settings
+ */
 import { supabase } from '../lib/supabase';
 import type {
-  Farmer,
-  Plot,
-  Crop,
-  CropHealthDaily,
-  Recommendation,
-  Alert,
-  ProduceGrade,
-  GovernmentScheme,
-  FarmerSchemeApplication,
-  Season,
-  SeasonReview,
-  Message,
+  Farmer, Crop, CropHealthDaily, CropStateSnapshot,
+  Recommendation, ProduceGrade, Alert, SensorReading,
+  Season, SeasonReview, Message, GovernmentScheme,
+  FarmerSchemeApplication, Plot,
 } from '../lib/supabase';
 
-/**
- * Supabase Data Layer Service
- * Handles all CRUD operations and queries for the app
- */
-
-// ============================================================================
-// PLOTS / FIELDS
-// ============================================================================
-
-export async function getPlots(farmerId: string): Promise<Plot[]> {
-  const { data, error } = await supabase
-    .from('plots')
-    .select('*')
-    .eq('farmer_id', farmerId);
-
-  if (error) throw error;
-  return data || [];
+// ── Helper: map CropStateSnapshot → CropHealthDaily shape ────────────────────
+function snapshotToHealth(snap: CropStateSnapshot): CropHealthDaily {
+  return {
+    id: snap.id,
+    crop_id: snap.crop_id,
+    date: snap.computed_at?.split('T')[0] ?? new Date().toISOString().split('T')[0],
+    health_score: snap.score,
+    moisture_pct: snap.soil_moisture_pct,
+    disease_risk_pct: undefined,
+    nitrogen_level: undefined,
+    canopy_cover_pct: snap.growth_stage_pct,
+    created_at: snap.computed_at ?? new Date().toISOString(),
+  };
 }
 
-export async function createPlot(plot: Partial<Plot>): Promise<Plot> {
+// ── Helper: map Crop DB row → Crop interface (add aliases) ───────────────────
+function mapCrop(row: any): Crop {
+  return {
+    ...row,
+    crop_name: row.crop_type,       // alias
+    planted_date: row.sow_date,     // alias
+    health_status: row.status,      // alias
+  };
+}
+
+// ============================================================================
+// FARMERS
+// ============================================================================
+
+export async function getFarmerByAuthId(authUserId: string): Promise<Farmer | null> {
   const { data, error } = await supabase
-    .from('plots')
-    .insert(plot)
+    .from('farmers')
+    .select('*')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
+}
+
+export async function createFarmer(farmer: Partial<Farmer>): Promise<Farmer> {
+  const { data, error } = await supabase
+    .from('farmers')
+    .insert({
+      auth_user_id: farmer.auth_user_id,
+      name: farmer.name,
+      phone: farmer.phone,
+      state: farmer.state,
+      district: farmer.district,
+      land_area_ac: farmer.total_area_acres ?? farmer.land_area_ac,
+    })
     .select()
     .single();
-
   if (error) throw error;
   return data;
+}
+
+// ============================================================================
+// PLOTS (virtual — not in real schema, return empty arrays gracefully)
+// ============================================================================
+
+export async function getPlots(_farmerId: string): Promise<Plot[]> {
+  return [];
 }
 
 // ============================================================================
@@ -51,456 +89,351 @@ export async function createPlot(plot: Partial<Plot>): Promise<Plot> {
 export async function getCrops(farmerId: string): Promise<Crop[]> {
   const { data, error } = await supabase
     .from('crops')
-    .select(`
-      *,
-      plot:plot_id (farmer_id)
-    `)
-    .eq('plot.farmer_id', farmerId);
-
+    .select('*')
+    .eq('farmer_id', farmerId)
+    .eq('crop_state', 'active')
+    .order('created_at', { ascending: false });
   if (error) throw error;
-  return data || [];
+  return (data || []).map(mapCrop);
 }
 
-export async function getCropsByPlot(plotId: string): Promise<Crop[]> {
-  const { data, error } = await supabase
-    .from('crops')
-    .select('*')
-    .eq('plot_id', plotId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
+export async function getCropsByPlot(_plotId: string): Promise<Crop[]> {
+  return [];
 }
 
 export async function getCropWithHealth(cropId: string): Promise<(Crop & { health?: CropHealthDaily | null }) | null> {
-  const { data: crop, error: cropError } = await supabase
-    .from('crops')
-    .select('*')
-    .eq('id', cropId)
-    .single();
+  const { data: crop, error } = await supabase
+    .from('crops').select('*').eq('id', cropId).single();
+  if (error) throw error;
 
-  if (cropError) throw cropError;
+  const { data: snap } = await supabase
+    .from('crop_state_snapshots')
+    .select('*').eq('crop_id', cropId)
+    .order('computed_at', { ascending: false }).limit(1).maybeSingle();
 
-  // Get today's health data
-  const { data: health } = await supabase
-    .from('crop_health_daily')
-    .select('*')
-    .eq('crop_id', cropId)
-    .eq('date', new Date().toISOString().split('T')[0])
-    .single();
-
-  return { ...crop, health } || null;
+  return { ...mapCrop(crop), health: snap ? snapshotToHealth(snap) : null };
 }
 
 export async function createCrop(crop: Partial<Crop>): Promise<Crop> {
   const { data, error } = await supabase
     .from('crops')
-    .insert(crop)
-    .select()
-    .single();
-
+    .insert({
+      farmer_id: crop.farmer_id,
+      crop_type: crop.crop_type ?? crop.crop_name,
+      variety: crop.variety,
+      sow_date: crop.sow_date ?? crop.planted_date,
+      expected_harvest_date: crop.expected_harvest_date,
+      area_ac: crop.area_ac,
+      status: crop.status ?? 'active',
+      crop_state: crop.crop_state ?? 'active',
+      season_name: crop.season_name,
+    })
+    .select().single();
   if (error) throw error;
-  return data;
+  return mapCrop(data);
 }
 
 export async function updateCrop(cropId: string, updates: Partial<Crop>): Promise<Crop> {
   const { data, error } = await supabase
-    .from('crops')
-    .update(updates)
-    .eq('id', cropId)
-    .select()
-    .single();
-
+    .from('crops').update(updates).eq('id', cropId).select().single();
   if (error) throw error;
-  return data;
+  return mapCrop(data);
 }
 
 // ============================================================================
-// CROP HEALTH DATA
+// CROP HEALTH (mapped from crop_state_snapshots)
 // ============================================================================
-
-export async function getCropHealthHistory(cropId: string, days: number = 7): Promise<CropHealthDaily[]> {
-  const fromDate = new Date();
-  fromDate.setDate(fromDate.getDate() - days);
-
-  const { data, error } = await supabase
-    .from('crop_health_daily')
-    .select('*')
-    .eq('crop_id', cropId)
-    .gte('date', fromDate.toISOString().split('T')[0])
-    .order('date', { ascending: true });
-
-  if (error) throw error;
-  return data || [];
-}
 
 export async function getCropHealthToday(cropId: string): Promise<CropHealthDaily | null> {
-  const today = new Date().toISOString().split('T')[0];
-
   const { data, error } = await supabase
-    .from('crop_health_daily')
+    .from('crop_state_snapshots')
     .select('*')
     .eq('crop_id', cropId)
-    .eq('date', today)
-    .single();
-
+    .order('computed_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
-  return data || null;
+  return data ? snapshotToHealth(data) : null;
+}
+
+export async function getCropHealthHistory(cropId: string, days: number = 7): Promise<CropHealthDaily[]> {
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+  const { data, error } = await supabase
+    .from('crop_state_snapshots')
+    .select('*')
+    .eq('crop_id', cropId)
+    .gte('computed_at', since)
+    .order('computed_at', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(snapshotToHealth);
 }
 
 export async function createCropHealthDaily(health: Partial<CropHealthDaily>): Promise<CropHealthDaily> {
+  // Insert into crop_state_snapshots
   const { data, error } = await supabase
-    .from('crop_health_daily')
-    .insert(health)
-    .select()
-    .single();
-
+    .from('crop_state_snapshots')
+    .insert({
+      crop_id: health.crop_id,
+      score: health.health_score,
+      soil_moisture_pct: health.moisture_pct,
+      growth_stage_pct: health.canopy_cover_pct,
+    })
+    .select().single();
   if (error) throw error;
-  return data;
+  return snapshotToHealth(data);
 }
 
 // ============================================================================
-// RECOMMENDATIONS
+// RECOMMENDATIONS (recommendation_events)
 // ============================================================================
 
 export async function getRecommendations(farmerId: string): Promise<Recommendation[]> {
-  const { data, error } = await supabase
-    .from('recommendations')
-    .select('*')
-    .eq('farmer_id', farmerId)
-    .order('created_at', { ascending: false });
+  // Join via crops to filter by farmer
+  const { data: crops } = await supabase
+    .from('crops').select('id').eq('farmer_id', farmerId);
+  if (!crops?.length) return [];
 
+  const cropIds = crops.map(c => c.id);
+  const { data, error } = await supabase
+    .from('recommendation_events')
+    .select('*')
+    .in('crop_id', cropIds)
+    .order('created_at', { ascending: false });
   if (error) throw error;
-  return data || [];
+  return (data || []).map(r => ({ ...r, farmer_id: farmerId }));
 }
 
 export async function getRecommendationsByCrop(cropId: string): Promise<Recommendation[]> {
   const { data, error } = await supabase
-    .from('recommendations')
-    .select('*')
-    .eq('crop_id', cropId)
+    .from('recommendation_events')
+    .select('*').eq('crop_id', cropId)
     .order('created_at', { ascending: false });
-
   if (error) throw error;
   return data || [];
 }
 
 export async function getTopRecommendations(farmerId: string, limit: number = 3): Promise<Recommendation[]> {
+  const { data: crops } = await supabase
+    .from('crops').select('id').eq('farmer_id', farmerId);
+  if (!crops?.length) return [];
+
+  const cropIds = crops.map(c => c.id);
   const { data, error } = await supabase
-    .from('recommendations')
+    .from('recommendation_events')
     .select('*')
-    .eq('farmer_id', farmerId)
+    .in('crop_id', cropIds)
     .eq('status', 'pending')
-    .order('priority', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(limit);
-
   if (error) throw error;
-  return data || [];
+  return (data || []).map(r => ({ ...r, farmer_id: farmerId }));
 }
 
 export async function createRecommendation(rec: Partial<Recommendation>): Promise<Recommendation> {
   const { data, error } = await supabase
-    .from('recommendations')
-    .insert(rec)
-    .select()
-    .single();
-
+    .from('recommendation_events')
+    .insert({
+      crop_id: rec.crop_id,
+      type: rec.type,
+      priority: rec.priority,
+      title: rec.title,
+      body: rec.body,
+      predicted_revenue_impact: rec.predicted_revenue_impact,
+      status: rec.status ?? 'pending',
+    })
+    .select().single();
   if (error) throw error;
   return data;
 }
 
 export async function updateRecommendation(recId: string, updates: Partial<Recommendation>): Promise<Recommendation> {
   const { data, error } = await supabase
-    .from('recommendations')
-    .update(updates)
-    .eq('id', recId)
-    .select()
-    .single();
-
+    .from('recommendation_events')
+    .update(updates).eq('id', recId).select().single();
   if (error) throw error;
   return data;
 }
 
 // ============================================================================
-// ALERTS
+// ALERTS (no real alerts table — return empty gracefully)
 // ============================================================================
 
-export async function getAlerts(farmerId: string): Promise<Alert[]> {
+export async function getAlerts(_farmerId: string): Promise<Alert[]> {
+  return [];
+}
+export async function getActiveAlerts(_farmerId: string): Promise<Alert[]> {
+  return [];
+}
+export async function createAlert(_alert: Partial<Alert>): Promise<Alert> {
+  throw new Error('alerts table not in current schema');
+}
+export async function updateAlert(_alertId: string, _updates: Partial<Alert>): Promise<Alert> {
+  throw new Error('alerts table not in current schema');
+}
+
+// ============================================================================
+// PRODUCE GRADES (grading_events)
+// ============================================================================
+
+export async function getProduceGrades(_farmerId: string): Promise<ProduceGrade[]> {
   const { data, error } = await supabase
-    .from('alerts')
+    .from('grading_events')
     .select('*')
-    .eq('farmer_id', farmerId)
-    .order('created_at', { ascending: false });
-
+    .order('graded_at', { ascending: false });
   if (error) throw error;
-  return data || [];
-}
-
-export async function getActiveAlerts(farmerId: string): Promise<Alert[]> {
-  const { data, error } = await supabase
-    .from('alerts')
-    .select('*')
-    .eq('farmer_id', farmerId)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
-}
-
-export async function createAlert(alert: Partial<Alert>): Promise<Alert> {
-  const { data, error } = await supabase
-    .from('alerts')
-    .insert(alert)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function updateAlert(alertId: string, updates: Partial<Alert>): Promise<Alert> {
-  const { data, error } = await supabase
-    .from('alerts')
-    .update(updates)
-    .eq('id', alertId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-// ============================================================================
-// PRODUCE GRADES (GRADING HISTORY)
-// ============================================================================
-
-export async function getProduceGrades(farmerId: string): Promise<ProduceGrade[]> {
-  const { data, error } = await supabase
-    .from('produce_grades')
-    .select(`
-      *,
-      crop:crop_id (id, crop_name, plot_id)
-    `)
-    .order('graded_date', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
+  return (data || []).map(g => ({ ...g, graded_date: g.graded_at, quality_score: g.score }));
 }
 
 export async function getProduceGradesByCrop(cropId: string): Promise<ProduceGrade[]> {
   const { data, error } = await supabase
-    .from('produce_grades')
-    .select('*')
-    .eq('crop_id', cropId)
-    .order('graded_date', { ascending: false });
-
+    .from('grading_events')
+    .select('*').eq('crop_id', cropId)
+    .order('graded_at', { ascending: false });
   if (error) throw error;
-  return data || [];
+  return (data || []).map(g => ({ ...g, graded_date: g.graded_at, quality_score: g.score }));
 }
 
 export async function createProduceGrade(grade: Partial<ProduceGrade>): Promise<ProduceGrade> {
   const { data, error } = await supabase
-    .from('produce_grades')
-    .insert(grade)
-    .select()
-    .single();
-
+    .from('grading_events')
+    .insert({
+      crop_id: grade.crop_id,
+      grade: grade.grade,
+      score: grade.score ?? grade.quality_score,
+      image_url: grade.image_url,
+      breakdown: grade.breakdown,
+      estimated_market_price: grade.estimated_market_price ?? grade.market_price_per_unit,
+      notes: grade.notes,
+    })
+    .select().single();
   if (error) throw error;
-  return data;
+  return { ...data, graded_date: data.graded_at, quality_score: data.score };
 }
 
 // ============================================================================
-// GOVERNMENT SCHEMES
+// GOVERNMENT SCHEMES (schemes table)
 // ============================================================================
 
 export async function getGovernmentSchemes(): Promise<GovernmentScheme[]> {
   const { data, error } = await supabase
-    .from('government_schemes')
-    .select('*')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false });
-
+    .from('schemes').select('*').order('name');
   if (error) throw error;
   return data || [];
 }
 
 export async function getSchemesByState(state: string): Promise<GovernmentScheme[]> {
   const { data, error } = await supabase
-    .from('government_schemes')
-    .select('*')
-    .eq('is_active', true)
-    .or(`state_specific.ilike.%${state}%,state_specific.eq.All States`)
-    .order('created_at', { ascending: false });
-
+    .from('schemes').select('*')
+    .contains('states_eligible', [state]);
   if (error) throw error;
   return data || [];
 }
 
 // ============================================================================
-// FARMER SCHEME APPLICATIONS
+// FARMER SCHEME APPLICATIONS (no table — stub)
 // ============================================================================
 
-export async function getFarmerSchemeApplications(farmerId: string): Promise<FarmerSchemeApplication[]> {
-  const { data, error } = await supabase
-    .from('farmer_scheme_applications')
-    .select(`
-      *,
-      scheme:scheme_id (*)
-    `)
-    .eq('farmer_id', farmerId)
-    .order('created_at', { ascending: false });
+export async function getFarmerSchemeApplications(_farmerId: string): Promise<FarmerSchemeApplication[]> {
+  return [];
+}
+export async function createSchemeApplication(_app: Partial<FarmerSchemeApplication>): Promise<FarmerSchemeApplication> {
+  throw new Error('farmer_scheme_applications not in current schema');
+}
+export async function updateSchemeApplication(_id: string, _updates: Partial<FarmerSchemeApplication>): Promise<FarmerSchemeApplication> {
+  throw new Error('farmer_scheme_applications not in current schema');
+}
 
+// ============================================================================
+// SEASONS (not a real table — derive from crops.season_name)
+// ============================================================================
+
+export async function getSeasons(_farmerId: string): Promise<Season[]> {
+  return [];
+}
+export async function getActiveSeason(_farmerId: string): Promise<Season | null> {
+  return null;
+}
+export async function createSeason(_season: Partial<Season>): Promise<Season> {
+  throw new Error('seasons table not in current schema');
+}
+export async function updateSeason(_id: string, _updates: Partial<Season>): Promise<Season> {
+  throw new Error('seasons table not in current schema');
+}
+
+// ============================================================================
+// SEASON REVIEWS (stub)
+// ============================================================================
+
+export async function getSeasonReviews(_seasonId: string): Promise<SeasonReview[]> {
+  return [];
+}
+export async function createSeasonReview(_review: Partial<SeasonReview>): Promise<SeasonReview> {
+  throw new Error('season_reviews table not in current schema');
+}
+
+// ============================================================================
+// MESSAGES (no table — stub)
+// ============================================================================
+
+export async function getMessages(_farmerId: string): Promise<Message[]> {
+  return [];
+}
+export async function getUnreadMessages(_farmerId: string): Promise<Message[]> {
+  return [];
+}
+export async function createMessage(_msg: Partial<Message>): Promise<Message> {
+  throw new Error('messages table not in current schema');
+}
+export async function markMessageAsRead(_messageId: string): Promise<Message> {
+  throw new Error('messages table not in current schema');
+}
+
+// ============================================================================
+// SENSOR READINGS (sensor_readings — new table)
+// ============================================================================
+
+export interface SensorReadingRow {
+  id: string;
+  crop_id: string;
+  farmer_id: string;
+  sensor_id: string | null;
+  reading_type: string;
+  value: number;
+  unit: string | null;
+  optimal_range: string | null;
+  source: string;
+  recorded_at: string;
+  created_at: string;
+}
+
+export async function getLatestSensorReadings(cropId: string): Promise<SensorReadingRow[]> {
+  const { data, error } = await supabase
+    .from('sensor_readings')
+    .select('*')
+    .eq('crop_id', cropId)
+    .order('recorded_at', { ascending: false })
+    .limit(20);
+
+  if (error) {
+    if (error.code === '42P01' || error.message?.includes('does not exist')) return [];
+    console.warn('[supabaseService] sensor_readings query failed:', error.message);
+    return [];
+  }
+
+  // Deduplicate — keep latest per reading_type
+  const seen = new Set<string>();
+  return (data || []).filter(row => {
+    if (seen.has(row.reading_type)) return false;
+    seen.add(row.reading_type);
+    return true;
+  });
+}
+
+export async function insertSensorReadings(
+  rows: Omit<SensorReadingRow, 'id' | 'created_at'>[]
+): Promise<SensorReadingRow[]> {
+  const { data, error } = await supabase
+    .from('sensor_readings').insert(rows).select();
   if (error) throw error;
   return data || [];
-}
-
-export async function createSchemeApplication(app: Partial<FarmerSchemeApplication>): Promise<FarmerSchemeApplication> {
-  const { data, error } = await supabase
-    .from('farmer_scheme_applications')
-    .insert(app)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function updateSchemeApplication(appId: string, updates: Partial<FarmerSchemeApplication>): Promise<FarmerSchemeApplication> {
-  const { data, error } = await supabase
-    .from('farmer_scheme_applications')
-    .update(updates)
-    .eq('id', appId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-// ============================================================================
-// SEASONS
-// ============================================================================
-
-export async function getSeasons(farmerId: string): Promise<Season[]> {
-  const { data, error } = await supabase
-    .from('seasons')
-    .select('*')
-    .eq('farmer_id', farmerId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
-}
-
-export async function getActiveSeason(farmerId: string): Promise<Season | null> {
-  const { data, error } = await supabase
-    .from('seasons')
-    .select('*')
-    .eq('farmer_id', farmerId)
-    .eq('is_active', true)
-    .single();
-
-  if (error && error.code !== 'PGRST116') throw error;
-  return data || null;
-}
-
-export async function createSeason(season: Partial<Season>): Promise<Season> {
-  const { data, error } = await supabase
-    .from('seasons')
-    .insert(season)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function updateSeason(seasonId: string, updates: Partial<Season>): Promise<Season> {
-  const { data, error } = await supabase
-    .from('seasons')
-    .update(updates)
-    .eq('id', seasonId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-// ============================================================================
-// SEASON REVIEWS
-// ============================================================================
-
-export async function getSeasonReviews(seasonId: string): Promise<SeasonReview[]> {
-  const { data, error } = await supabase
-    .from('season_reviews')
-    .select('*')
-    .eq('season_id', seasonId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
-}
-
-export async function createSeasonReview(review: Partial<SeasonReview>): Promise<SeasonReview> {
-  const { data, error } = await supabase
-    .from('season_reviews')
-    .insert(review)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-// ============================================================================
-// MESSAGES
-// ============================================================================
-
-export async function getMessages(farmerId: string): Promise<Message[]> {
-  const { data, error } = await supabase
-    .from('messages')
-    .select('*')
-    .eq('farmer_id', farmerId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
-}
-
-export async function getUnreadMessages(farmerId: string): Promise<Message[]> {
-  const { data, error } = await supabase
-    .from('messages')
-    .select('*')
-    .eq('farmer_id', farmerId)
-    .eq('is_read', false)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
-}
-
-export async function createMessage(msg: Partial<Message>): Promise<Message> {
-  const { data, error } = await supabase
-    .from('messages')
-    .insert(msg)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function markMessageAsRead(messageId: string): Promise<Message> {
-  const { data, error } = await supabase
-    .from('messages')
-    .update({ is_read: true, read_at: new Date().toISOString() })
-    .eq('id', messageId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
 }

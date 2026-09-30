@@ -6,14 +6,14 @@ import { useAuth } from "../contexts/AuthContext";
 import { useData } from "../contexts/DataContext";
 import { supabase } from "../lib/supabase";
 
-// Demo data for demo@123 only
+// Demo data for demo@123 only — all dates within Sep 1–10, 2026
 const DEMO_HISTORY = [
-  { id: 14, date: "14 Nov 2024", crop: "Wheat", variety: "HD-3226", grade: "A" as const, score: 92, price: 2240, qty: 12, img: "https://images.unsplash.com/photo-1630873711080-aa3097d1da66?w=120&h=80&fit=crop&auto=format" },
-  { id: 13, date: "02 Nov 2024", crop: "Wheat", variety: "HD-3226", grade: "A" as const, score: 89, price: 2180, qty: 10, img: "https://images.unsplash.com/photo-1715289718087-66a61b7b4c0d?w=120&h=80&fit=crop&auto=format" },
-  { id: 12, date: "18 Oct 2024", crop: "Wheat", variety: "HD-3226", grade: "B" as const, score: 74, price: 2020, qty: 8, img: "https://images.unsplash.com/photo-1626606439378-191600523bfd?w=120&h=80&fit=crop&auto=format" },
-  { id: 11, date: "05 Oct 2024", crop: "Wheat", variety: "HD-3226", grade: "A" as const, score: 91, price: 2200, qty: 14, img: "https://images.unsplash.com/photo-1508175688576-0c076b47b5b5?w=120&h=80&fit=crop&auto=format" },
-  { id: 10, date: "12 Sep 2024", crop: "Paddy", variety: "PR-126", grade: "B" as const, score: 71, price: 1940, qty: 22, img: "https://images.unsplash.com/photo-1519082572439-7ed19908e47e?w=120&h=80&fit=crop&auto=format" },
-  { id: 9, date: "28 Aug 2024", crop: "Paddy", variety: "PR-126", grade: "A" as const, score: 88, price: 2060, qty: 18, img: "https://images.unsplash.com/photo-1519082572439-7ed19908e47e?w=120&h=80&fit=crop&auto=format" },
+  { id: 6, date: "10 Sep 2026", crop: "Tomato", variety: "Hybrid F1", grade: "A" as const, score: 92, price: 2240, qty: 12, img: "https://images.unsplash.com/photo-1546054454-aa26e2b734c7?w=120&h=80&fit=crop&auto=format" },
+  { id: 5, date: "07 Sep 2026", crop: "Tomato", variety: "Hybrid F1", grade: "B" as const, score: 74, price: 2020, qty: 10, img: "https://images.unsplash.com/photo-1546054454-aa26e2b734c7?w=120&h=80&fit=crop&auto=format" },
+  { id: 4, date: "05 Sep 2026", crop: "Onion", variety: "Nashik Red", grade: "A" as const, score: 88, price: 1940, qty: 22, img: "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=120&h=80&fit=crop&auto=format" },
+  { id: 3, date: "03 Sep 2026", crop: "Onion", variety: "Nashik Red", grade: "B" as const, score: 71, price: 1760, qty: 18, img: "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=120&h=80&fit=crop&auto=format" },
+  { id: 2, date: "02 Sep 2026", crop: "Tomato", variety: "Hybrid F1", grade: "A" as const, score: 91, price: 2200, qty: 14, img: "https://images.unsplash.com/photo-1546054454-aa26e2b734c7?w=120&h=80&fit=crop&auto=format" },
+  { id: 1, date: "01 Sep 2026", crop: "Tomato", variety: "Hybrid F1", grade: "A" as const, score: 89, price: 2180, qty: 8, img: "https://images.unsplash.com/photo-1546054454-aa26e2b734c7?w=120&h=80&fit=crop&auto=format" },
 ];
 
 const gradeConfig = {
@@ -206,7 +206,7 @@ export default function GradingHistory({ navigate }: { navigate: (s: Screen) => 
         onBack={() => navigate("grade-capture")}
         actions={
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ fontSize: 13, color: C.inkMuted }}>Season: Kharif 2024</span>
+            <span style={{ fontSize: 13, color: C.inkMuted }}>Season: Kharif 2026</span>
           </div>
         }
       />

@@ -99,7 +99,7 @@ export default function Landing({ navigate }: { navigate: (s: string) => void })
       >
         <div style={{ marginBottom: 24 }}>
           <Badge color={C.sage} bg={C.sageTint} size="lg">
-            ★ Kharif 2024 — 2,500+ farms trusting AnnaVriddhi
+            ★ Kharif 2026 — 2,500+ farms trusting AnnaVriddhi
           </Badge>
         </div>
 

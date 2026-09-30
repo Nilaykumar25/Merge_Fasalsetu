@@ -53,7 +53,7 @@ export default function AllClear({ navigate }: { navigate: (s: Screen) => void }
             marginBottom: 12,
           }}
         >
-          Thursday, 14 November 2024
+          Wednesday, 10 September 2026
         </div>
 
         <h1

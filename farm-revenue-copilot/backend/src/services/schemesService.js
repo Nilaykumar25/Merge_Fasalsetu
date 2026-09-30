@@ -334,7 +334,8 @@ async function match(farmerProfile) {
     ...farmerProfile,
     crop: farmerProfile.crop?.toLowerCase().trim(),
     state: farmerProfile.state?.trim(),
-    district: farmerProfile.district?.trim()
+    district: farmerProfile.district?.trim(),
+    category: farmerProfile.category?.trim() || null
   };
   
   // Filter active schemes only
@@ -384,6 +385,7 @@ async function match(farmerProfile) {
   
   // Match and format schemes
   const matchedSchemes = geographicallyEligibleSchemes
+    .filter(scheme => !normalized.category || scheme.scheme_type === normalized.category)
     .map(scheme => formatSchemeResponse(scheme, normalized))
     .filter(result => 
       result.window.status !== 'CLOSED' &&

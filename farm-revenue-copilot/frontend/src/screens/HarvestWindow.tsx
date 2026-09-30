@@ -3,18 +3,18 @@ import { Card, PageHeader, Badge, Btn, Sparkline } from "../components/ui";
 import type { Screen } from "../tokens";
 
 const calendar = [
-  { date: "17", day: "Sun", icon: "◉", temp: "28°C", moisture: 91, risk: "low" as const },
-  { date: "18", day: "Mon", icon: "⛅", temp: "25°C", moisture: 90, risk: "low" as const },
-  { date: "19", day: "Tue", icon: "◉", temp: "27°C", moisture: 89, risk: "low" as const },
-  { date: "20", day: "Wed", icon: "◉", temp: "26°C", moisture: 88, risk: "low" as const },
-  { date: "21", day: "Thu", icon: "◉", temp: "27°C", moisture: 87, risk: "low" as const },
-  { date: "22", day: "Fri", icon: "◉", temp: "26°C", moisture: 86, risk: "low" as const, recommended: true },
-  { date: "23", day: "Sat", icon: "◉", temp: "25°C", moisture: 85, risk: "low" as const, recommended: true },
-  { date: "24", day: "Sun", icon: "◉", temp: "26°C", moisture: 85, risk: "low" as const, recommended: true },
-  { date: "25", day: "Mon", icon: "⛅", temp: "24°C", moisture: 84, risk: "medium" as const },
-  { date: "26", day: "Tue", icon: "🌦️", temp: "22°C", moisture: 80, risk: "medium" as const },
-  { date: "27", day: "Wed", icon: "🌧️", temp: "19°C", moisture: 75, risk: "high" as const },
-  { date: "28", day: "Thu", icon: "🌧️", temp: "18°C", moisture: 68, risk: "high" as const },
+  { date: "10", day: "Wed", icon: "◉", temp: "28°C", moisture: 91, risk: "low" as const },
+  { date: "11", day: "Thu", icon: "⛅", temp: "25°C", moisture: 90, risk: "low" as const },
+  { date: "12", day: "Fri", icon: "◉", temp: "27°C", moisture: 89, risk: "low" as const },
+  { date: "13", day: "Sat", icon: "◉", temp: "26°C", moisture: 88, risk: "low" as const },
+  { date: "14", day: "Sun", icon: "◉", temp: "27°C", moisture: 87, risk: "low" as const },
+  { date: "15", day: "Mon", icon: "◉", temp: "26°C", moisture: 86, risk: "low" as const, recommended: true },
+  { date: "16", day: "Tue", icon: "◉", temp: "25°C", moisture: 85, risk: "low" as const, recommended: true },
+  { date: "17", day: "Wed", icon: "◉", temp: "26°C", moisture: 85, risk: "low" as const, recommended: true },
+  { date: "18", day: "Thu", icon: "⛅", temp: "24°C", moisture: 84, risk: "medium" as const },
+  { date: "19", day: "Fri", icon: "🌦️", temp: "22°C", moisture: 80, risk: "medium" as const },
+  { date: "20", day: "Sat", icon: "🌧️", temp: "19°C", moisture: 75, risk: "high" as const },
+  { date: "21", day: "Sun", icon: "🌧️", temp: "18°C", moisture: 68, risk: "high" as const },
 ];
 
 const priceData = [2140, 2160, 2180, 2200, 2210, 2220, 2240, 2230, 2220, 2200, 2180, 2150];
@@ -25,15 +25,15 @@ export default function HarvestWindow({ navigate }: { navigate: (s: Screen) => v
     <div>
       <PageHeader
         title="Harvest Window"
-        subtitle="Optimal 3-day window identified · Plot A · Wheat"
+        subtitle="Optimal 3-day window identified · Plot A · Tomato"
         back="Recommendation"
         onBack={() => navigate("recommendation")}
-        actions={<Badge color={C.sage} bg={C.sageTint} size="lg">◈ Harvest Nov 22–24</Badge>}
+        actions={<Badge color={C.sage} bg={C.sageTint} size="lg">◈ Harvest Sep 15–17</Badge>}
       />
 
       {/* Calendar strip */}
       <Card hover={false} style={{ padding: "24px 24px", marginBottom: 20 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 16 }}>12-day harvest calendar (Nov 17–28)</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 16 }}>12-day harvest calendar (Sep 10–21)</div>
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
           {calendar.map((d) => {
             const rc = riskColors[d.risk];
@@ -106,7 +106,7 @@ export default function HarvestWindow({ navigate }: { navigate: (s: Screen) => v
       {/* Scoring breakdown + price chart */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
         <Card hover={false} style={{ padding: "24px 28px" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 16 }}>Window scoring — Nov 22</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 16 }}>Window scoring — Sep 15</div>
           {[
             { factor: "Grain maturity", score: 92, color: C.sage, note: "88% dry matter, golden colour" },
             { factor: "Weather safety", score: 96, color: C.sage, note: "5 consecutive dry days" },
@@ -145,10 +145,10 @@ export default function HarvestWindow({ navigate }: { navigate: (s: Screen) => v
             <div style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>Mandi price trend (₹/qtl)</div>
             <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, color: C.sageDeep }}>₹2,240</div>
           </div>
-          <div style={{ fontSize: 11, color: C.inkMuted, marginBottom: 16 }}>Karnal Mandi · Nov 17–28 forecast</div>
+          <div style={{ fontSize: 11, color: C.inkMuted, marginBottom: 16 }}>Nashik Mandi · Sep 10–21 forecast</div>
           <Sparkline data={priceData} color={C.sage} height={100} />
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-            {["17", "19", "21", "22–24 ★", "26", "28"].map((d) => (
+            {["10", "12", "14", "15–17 ★", "19", "21"].map((d) => (
               <div key={d} style={{ fontSize: 9, color: d.includes("★") ? C.sage : C.inkMuted, fontWeight: d.includes("★") ? 700 : 400 }}>{d}</div>
             ))}
           </div>
@@ -163,7 +163,7 @@ export default function HarvestWindow({ navigate }: { navigate: (s: Screen) => v
               marginTop: 16,
             }}
           >
-            <span style={{ fontSize: 12, color: C.inkMuted }}>Revenue vs. harvesting Nov 27</span>
+            <span style={{ fontSize: 12, color: C.inkMuted }}>Revenue vs. harvesting Sep 21</span>
             <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, color: C.sageDeep }}>+₹1,080</span>
           </div>
         </Card>

@@ -3,14 +3,14 @@ import { Card, PageHeader, Badge, Sparkline } from "../components/ui";
 import type { Screen } from "../tokens";
 
 const monthlyRevData = [180, 240, 310, 290, 360, 420, 510, 490, 560, 680, 740, 820];
-const months = ["Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
+const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export default function RevenueSummary({ navigate }: { navigate: (s: Screen) => void }) {
   return (
     <div>
       <PageHeader
         title="Revenue Impact"
-        subtitle="Kharif 2024 · Plot A · 2.5 acres · Wheat"
+        subtitle="Kharif 2026 · Plot A · 2.5 acres · Tomato & Onion"
         back="Dashboard"
         onBack={() => navigate("dashboard")}
         actions={<Badge color={C.sage} bg={C.sageTint} size="lg">Season in progress</Badge>}
@@ -50,7 +50,7 @@ export default function RevenueSummary({ navigate }: { navigate: (s: Screen) => 
           >
             ₹4,280
           </div>
-          <div style={{ fontSize: 14, color: `${C.sageTint}cc` }}>this season so far · 78 days remaining</div>
+          <div style={{ fontSize: 14, color: `${C.sageTint}cc` }}>this season so far · Season Sep–Dec 2026</div>
         </div>
 
         <div style={{ display: "flex", gap: 24, position: "relative" }}>
@@ -89,7 +89,7 @@ export default function RevenueSummary({ navigate }: { navigate: (s: Screen) => 
         <Card hover={false} style={{ padding: "24px 28px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.ink }}>Cumulative revenue impact (₹ hundreds)</div>
-            <Badge color={C.sage} bg={C.sageTint}>Season Dec 2023 – Nov 2024</Badge>
+            <Badge color={C.sage} bg={C.sageTint}>Season Sep 2026 – Dec 2026</Badge>
           </div>
           <Sparkline data={monthlyRevData} color={C.sage} height={120} />
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>

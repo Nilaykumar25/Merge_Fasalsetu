@@ -70,7 +70,7 @@ export default function Settings({ navigate }: { navigate: (s: Screen) => void }
       rows: [
         { icon: "◈", bg: C.sageTint, label: "Farm name", sub: "Ramesh's Farm · Plot A", right: <span style={{ fontSize: 13, color: C.sage, cursor: "pointer", fontWeight: 600 }}>Edit →</span> },
         { icon: "⊗", bg: "#EAF0FD", label: "Location", sub: "Sector 12, Karnal, Haryana", right: <span style={{ fontSize: 13, color: C.sage, cursor: "pointer", fontWeight: 600 }}>Edit →</span> },
-        { icon: "∆", bg: C.amberTint, label: "Current crop", sub: "Wheat · HD-3226 · Kharif 2024", right: <span style={{ fontSize: 13, color: C.sage, cursor: "pointer", fontWeight: 600 }}>Edit →</span> },
+        { icon: "∆", bg: C.amberTint, label: "Current crop", sub: "Tomato · Hybrid F1 · Kharif 2026", right: <span style={{ fontSize: 13, color: C.sage, cursor: "pointer", fontWeight: 600 }}>Edit →</span> },
         { icon: "▭", bg: C.sageTint, label: "Plot size", sub: "2.5 acres", right: <span style={{ fontSize: 13, color: C.sage, cursor: "pointer", fontWeight: 600 }}>Edit →</span> },
       ],
     },
@@ -102,7 +102,7 @@ export default function Settings({ navigate }: { navigate: (s: Screen) => void }
     {
       label: "Account",
       rows: [
-        { icon: "◈", bg: C.bg, label: "Farmer ID", sub: "FRC-KA-2024-003481", right: <span style={{ fontSize: 12, color: C.inkMuted }}>Verified ✓</span> },
+        { icon: "◈", bg: C.bg, label: "Farmer ID", sub: "FRC-MH-2026-003481", right: <span style={{ fontSize: 12, color: C.inkMuted }}>Verified ✓</span> },
         { icon: "?", bg: C.sageTint, label: "Help & support", sub: "How this works, FAQ", right: <span style={{ fontSize: 18, color: C.inkMuted }}>›</span> },
         { icon: "▬", bg: C.bg, label: "Privacy policy", sub: "Data usage & rights", right: <span style={{ fontSize: 18, color: C.inkMuted }}>›</span> },
       ],

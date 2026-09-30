@@ -4,14 +4,14 @@ import { Card, PageHeader, Badge, Btn } from "../components/ui";
 import type { Screen } from "../tokens";
 
 const recommendations = [
-  { date: "Sep 18", type: "Irrigation", action: "Irrigate Plot A — soil at 38%", followed: "yes" as const, predicted: "+₹340", actual: "+₹380", icon: "≈" },
-  { date: "Sep 24", type: "Disease", action: "Apply fungicide — blight early-stage detected", followed: "yes" as const, predicted: "+₹920", actual: "+₹860", icon: "⊕" },
-  { date: "Oct 02", type: "Fertilizer", action: "Urea top-dressing 25 kg/acre", followed: "partial" as const, predicted: "+₹280", actual: "+₹140", icon: "⊕" },
-  { date: "Oct 11", type: "Do-nothing", action: "No irrigation — rain expected in 2 days", followed: "yes" as const, predicted: "Save ₹420", actual: "Saved ₹420", icon: "✓" },
-  { date: "Oct 19", type: "Irrigation", action: "Irrigate — dry spell extending 7+ days", followed: "no" as const, predicted: "+₹380", actual: "−₹200", icon: "≈" },
-  { date: "Oct 28", type: "Grading", action: "Grade batch #11 — harvest timing optimal", followed: "yes" as const, predicted: "Grade A", actual: "Grade A (+₹420)", icon: "⊙" },
-  { date: "Nov 05", type: "Harvest", action: "Harvest wheat Nov 22–24 for best price", followed: "yes" as const, predicted: "+₹1,840", actual: "In progress", icon: "◈" },
-  { date: "Nov 10", type: "Scheme", action: "Apply for PMFBY before Nov 30 deadline", followed: "no" as const, predicted: "₹2,400 cover", actual: "Pending", icon: "▦" },
+  { date: "Sep 1", type: "Irrigation", action: "Irrigate Plot A — soil at 38%", followed: "yes" as const, predicted: "+₹340", actual: "+₹380", icon: "≈" },
+  { date: "Sep 2", type: "Disease", action: "Apply fungicide — blight early-stage detected", followed: "yes" as const, predicted: "+₹920", actual: "+₹860", icon: "⊕" },
+  { date: "Sep 3", type: "Fertilizer", action: "Urea top-dressing 25 kg/acre", followed: "partial" as const, predicted: "+₹280", actual: "+₹140", icon: "⊕" },
+  { date: "Sep 4", type: "Do-nothing", action: "No irrigation — rain expected in 2 days", followed: "yes" as const, predicted: "Save ₹420", actual: "Saved ₹420", icon: "✓" },
+  { date: "Sep 5", type: "Irrigation", action: "Irrigate — dry spell extending 7+ days", followed: "no" as const, predicted: "+₹380", actual: "−₹200", icon: "≈" },
+  { date: "Sep 7", type: "Grading", action: "Grade batch #2 — harvest timing optimal", followed: "yes" as const, predicted: "Grade A", actual: "Grade A (+₹420)", icon: "⊙" },
+  { date: "Sep 9", type: "Fertilizer", action: "Apply nitrogen top-dress 20 kg/acre", followed: "yes" as const, predicted: "+₹480", actual: "In progress", icon: "◈" },
+  { date: "Sep 10", type: "Scheme", action: "Apply for PMFBY before Sep 30 deadline", followed: "no" as const, predicted: "₹2,400 cover", actual: "Pending", icon: "▦" },
 ];
 
 const followedConfig = {
@@ -27,7 +27,7 @@ export default function SeasonReview({ navigate }: { navigate: (s: Screen) => vo
     <div>
       <PageHeader
         title="Season Review"
-        subtitle="Kharif 2024 · Plot A · Wheat · Dec 2023 – Nov 2024"
+        subtitle="Kharif 2026 · Plot A · Wheat"
         back="Dashboard"
         onBack={() => navigate("dashboard")}
         actions={
@@ -100,10 +100,10 @@ export default function SeasonReview({ navigate }: { navigate: (s: Screen) => vo
 
             <div style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column", gap: 12 }}>
               {[
-                { icon: "🏆", title: "Best week", value: "Oct 28 — Grade A batch at ₹2,200/qtl" },
-                { icon: "⊕", title: "Disease catch saved", value: "₹860 — caught blight in week 3" },
-                { icon: "⚡", title: "Biggest miss", value: "Oct 19 irrigation — skipped, cost ₹200" },
-                { icon: "◈", title: "Best crop result", value: "Wheat · Grade A · 14 qtl" },
+                { icon: "🏆", title: "Best week", value: "Sep 7 — Grade A tomato batch at ₹2,240/qtl" },
+                { icon: "⊕", title: "Disease catch saved", value: "₹860 — caught blight in week 1" },
+                { icon: "⚡", title: "Biggest miss", value: "Sep 5 irrigation — skipped, cost ₹200" },
+                { icon: "◈", title: "Best crop result", value: "Tomato · Grade A · 12 qtl" },
               ].map(({ icon, title, value }) => (
                 <div key={title} style={{ background: "rgba(255,255,255,0.07)", borderRadius: radius.md, padding: "12px 16px", display: "flex", gap: 12, alignItems: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <span style={{ fontSize: 22 }}>{icon}</span>
@@ -203,9 +203,9 @@ export default function SeasonReview({ navigate }: { navigate: (s: Screen) => vo
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 9, background: C.sage, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>◈</div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Farm Revenue Copilot</div>
-                <div style={{ marginLeft: "auto", fontSize: 12, color: `${C.sageTint}66` }}>Kharif 2024</div>
+                <div style={{ marginLeft: "auto", fontSize: 12, color: `${C.sageTint}66` }}>Kharif 2026</div>
               </div>
-              <div style={{ fontSize: 12, color: `${C.sageTint}66`, marginBottom: 4 }}>Ramesh's Farm · Karnal, Haryana</div>
+              <div style={{ fontSize: 12, color: `${C.sageTint}66`, marginBottom: 4 }}>Ramesh's Farm · Nashik, Maharashtra</div>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 52, fontWeight: 800, color: "#fff", letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 6 }}>₹4,280</div>
               <div style={{ fontSize: 13, color: C.sageTint, marginBottom: 24 }}>added this season over baseline</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>

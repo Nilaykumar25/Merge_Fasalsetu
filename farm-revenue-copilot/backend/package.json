@@ -26,6 +26,7 @@
     "job:alerts": "node -e \"require('./src/jobs/alertJob').run().then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); })\""
   },
   "dependencies": {
+    "@google/genai": "^2.22.0",
     "@google/generative-ai": "^0.21.0",
     "@supabase/supabase-js": "^2.116.0",
     "axios": "^1.20.0",

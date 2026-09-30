@@ -43,6 +43,7 @@ router.get('/match', async (req, res, next) => {
       landUnit: req.query.landUnit || 'acre',
       season: req.query.season,
       activity: req.query.activity,
+      category: req.query.category,
       farmerCategory: req.query.farmerCategory,
       landOwnership: req.query.landOwnership === 'true',
       estimatedCost: req.query.estimatedCost ? parseFloat(req.query.estimatedCost) : null

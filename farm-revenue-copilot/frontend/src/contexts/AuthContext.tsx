@@ -152,12 +152,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setFarmer(existingFarmer);
         localStorage.setItem('farmer_id', existingFarmer.id);
         
-        // Load settings
-        const { data: settingsData } = await supabase
-          .from('user_settings')
-          .select('*')
-          .eq('farmer_id', existingFarmer.id)
-          .maybeSingle();
+        // Load settings — table may not exist yet, ignore errors
+        let settingsData = null;
+        try {
+          const res = await supabase
+            .from('user_settings')
+            .select('*')
+            .eq('farmer_id', existingFarmer.id)
+            .maybeSingle();
+          settingsData = res.data ?? null;
+        } catch {
+          // table doesn't exist yet — safe to ignore
+        }
         
         setUserSettings(settingsData || null);
       } else {
@@ -245,8 +251,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .maybeSingle();
 
         if (settingsError && settingsError.code !== 'PGRST116') {
-          console.error('Error loading settings:', settingsError);
-          // Don't throw - settings are optional
+          // Silently ignore 404 — user_settings table may not exist yet in this deployment
+          if (!settingsError.message?.includes('404') && settingsError.code !== '42P01') {
+            console.error('Error loading settings:', settingsError);
+          }
         }
 
         setUserSettings(settingsData || null);
@@ -271,16 +279,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (authError) throw authError;
       if (!authData.user) throw new Error('No user returned from signup');
 
-      // Create farmer profile
+      // Create farmer profile — only real columns: name, phone, state, district, land_area_ac
       const { error: farmerError } = await supabase.from('farmers').insert({
         auth_user_id: authData.user.id,
         name: farmerData.name || '',
         phone: farmerData.phone,
         state: farmerData.state,
         district: farmerData.district,
-        village: farmerData.village,
-        total_area_acres: farmerData.total_area_acres,
-        preferred_language: farmerData.preferred_language || 'English',
+        land_area_ac: farmerData.total_area_acres ?? farmerData.land_area_ac,
       });
 
       if (farmerError) throw farmerError;
