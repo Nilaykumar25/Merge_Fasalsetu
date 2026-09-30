@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fasalsetu.example/schemas/pack/1.0.0",
+  "title": "FasalSetu Country Pack",
+  "description": "Validates every country_packs/<cc>/pack.yaml. No country logic lives in code; this file is the gate.",
+  "type": "object",
+  "required": ["pack_format", "meta", "locale", "compliance", "market", "revenue", "delivery", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "pack_format": { "type": "integer", "const": 1 },
+
+    "meta": {
+      "type": "object",
+      "required": ["code", "name", "completeness", "maintainer", "data_provenance"],
+      "additionalProperties": false,
+      "properties": {
+        "code":            { "type": "string", "pattern": "^[A-Z]{2}$" },
+        "name":            { "type": "string" },
+        "completeness":    { "enum": ["full", "thin"] },
+        "maintainer":      { "type": "string" },
+        "data_provenance": { "type": "string" }
+      }
+    },
+
+    "locale": {
+      "type": "object",
+      "required": ["default_language", "units"],
+      "properties": {
+        "default_language": { "type": "string" },
+        "languages": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "name":           { "type": "string" },
+              "stt":            { "type": "string" },
+              "tts":            { "type": "string" },
+              "translate_code": { "type": "string" }
+            }
+          }
+        },
+        "units": {
+          "type": "object",
+          "required": ["currency"],
+          "properties": {
+            "area":      { "type": "string" },
+            "mass":      { "type": "string" },
+            "price_per": { "type": "string" },
+            "currency":  { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "compliance": {
+      "type": "object",
+      "required": ["ruleset", "authority", "retrieved_on", "banned", "restricted"],
+      "properties": {
+        "ruleset":      { "type": "string" },
+        "authority":    { "type": "string" },
+        "retrieved_on": { "type": "string" },
+        "audit_log":    { "type": "string" },
+        "banned": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["substance", "source"],
+            "additionalProperties": false,
+            "properties": {
+              "substance": { "type": "string" },
+              "source":    { "type": "string" }
+            }
+          }
+        },
+        "restricted": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["substance", "source"],
+            "additionalProperties": false,
+            "properties": {
+              "substance": { "type": "string" },
+              "source":    { "type": "string" }
+            }
+          }
+        },
+        "regional": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["source"],
+            "properties": {
+              "notes":  { "type": "string" },
+              "source": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "market": {
+      "type": "object",
+      "required": ["price_source"],
+      "properties": {
+        "price_source": {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name":          { "type": "string" },
+            "kind":          { "type": "string" },
+            "refresh_hours": { "type": "number" }
+          }
+        },
+        "support_price": {
+          "type": "object",
+          "properties": {
+            "name":   { "type": "string" },
+            "source": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "revenue": {
+      "type": "object",
+      "required": ["currency", "formula_version", "risk_discount_rate", "do_nothing_threshold", "show_assumptions"],
+      "properties": {
+        "currency":            { "type": "string" },
+        "formula_version":     { "type": "string" },
+        "risk_discount_rate":  { "type": "number" },
+        "do_nothing_threshold":{ "type": "number" },
+        "show_assumptions":    { "type": "boolean" }
+      }
+    },
+
+    "delivery": {
+      "type": "object",
+      "required": ["channels", "reply_codes"],
+      "properties": {
+        "channels":    { "type": "array", "items": { "type": "string" } },
+        "reply_codes": { "type": "object" },
+        "sms": {
+          "type": "object",
+          "properties": {
+            "max_chars":    { "type": "integer" },
+            "template_set": { "type": "string" }
+          }
+        },
+        "templates": {
+          "type": "object",
+          "description": "Keyed by category, then by language code.",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "data": {
+      "type": "object",
+      "required": ["residency", "pii_in_event_log"],
+      "additionalProperties": false,
+      "properties": {
+        "residency":        { "type": "string" },
+        "pii_in_event_log": { "type": "boolean", "const": false }
+      }
+    },
+
+    "crops": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "seasons":              { "type": "array", "items": { "type": "string" } },
+          "yield_baseline":       { "type": "object" },
+          "grades":               { "type": "array", "items": { "type": "string" } },
+          "grade_price_factor":   { "type": "object" },
+          "crop_water_requirement_mm_per_day": { "type": "number" }
+        }
+      }
+    },
+
+    "soil_card": {
+      "type": "object",
+      "properties": {
+        "name":       { "type": "string" },
+        "map":        { "type": "object" },
+        "units_note": { "type": "string" }
+      }
+    },
+
+    "sensing": {
+      "type": "object",
+      "properties": {
+        "weather":         { "type": "object" },
+        "satellite":       { "type": "object" },
+        "climate_history": { "type": "object" }
+      }
+    },
+
+    "models": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": { "enum": ["reuse", "retrain_required", "unavailable"] },
+          "card":   { "type": "string" }
+        }
+      }
+    },
+
+    "schemes": {
+      "type": "object",
+      "properties": {
+        "corpus":       {},
+        "embed_model":  { "type": "string" }
+      }
+    }
+  }
+}

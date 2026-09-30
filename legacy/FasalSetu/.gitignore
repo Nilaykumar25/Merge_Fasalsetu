@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Environment variables - NEVER commit these
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env*.local
+
+# Build output
+dist/
+build/
+
+# Vite
+.vite/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+
+# GCP Service Account Keys - NEVER commit these
+src/gcp-key.json
+**/gcp-key.json
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# SHC scraper — SQLite DB and downloaded HTML cards are large, never commit
+shc-scraper/shc-local-scraper/data/
+shc-scraper/shc-local-scraper/__pycache__/
+
+# Large venue CSV (50MB) — share separately or use LFS
+muj_jaipur_50km.csv
+
+# Virtual envs
+.venv/
+venv/

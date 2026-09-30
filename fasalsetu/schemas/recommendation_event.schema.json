@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fasalsetu.example/schemas/recommendation_event/1.0.0",
+  "title": "FasalSetu Recommendation Event",
+  "description": "Append-only event. A recommendation, its delivery, the farmer's response and the measured outcome are separate events linked by parent_event_id. No farmer PII: farm_id is a pseudonymous, country-local identifier.",
+  "type": "object",
+  "required": ["event_id", "schema_version", "event_type", "country", "farm_id", "occurred_at", "payload"],
+  "properties": {
+    "event_id": { "type": "string", "format": "uuid" },
+    "schema_version": { "const": "1.0.0" },
+    "event_type": { "enum": ["recommendation", "delivery", "response", "outcome"] },
+    "parent_event_id": { "type": ["string", "null"], "format": "uuid", "description": "Null for recommendation; required for the other types." },
+    "country": { "type": "string", "pattern": "^[A-Z]{2}$", "description": "ISO 3166-1 alpha-2" },
+    "farm_id": { "type": "string", "description": "Pseudonymous; mapping to a person stays in-country." },
+    "plot_id": { "type": ["string", "null"] },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "payload": {
+      "oneOf": [
+        { "$ref": "#/$defs/recommendation" },
+        { "$ref": "#/$defs/delivery" },
+        { "$ref": "#/$defs/response" },
+        { "$ref": "#/$defs/outcome" }
+      ]
+    }
+  },
+  "$defs": {
+    "source_tag": { "enum": ["real", "simulated", "satellite", "api", "farmer_reported"] },
+    "input_component": {
+      "type": "object",
+      "required": ["value", "source"],
+      "properties": {
+        "value": { "type": ["number", "null"] },
+        "unit": { "type": "string" },
+        "source": { "$ref": "#/$defs/source_tag" },
+        "observed_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "recommendation": {
+      "type": "object",
+      "required": ["agent", "category", "is_do_nothing", "crop_condition", "revenue", "action", "guardrail"],
+      "properties": {
+        "agent": { "enum": ["soil", "weather", "market", "disease", "scheme", "irrigation", "harvest", "grading", "regenerative", "satellite", "orchestrator"] },
+        "category": { "enum": ["irrigate", "fertilize", "spray", "cover", "harvest", "grade", "sell", "hold", "scheme", "regenerative", "do_nothing"] },
+        "is_do_nothing": { "type": "boolean" },
+        "crop": { "type": "string" },
+        "crop_condition": {
+          "type": "object",
+          "required": ["score", "components"],
+          "properties": {
+            "score": { "type": "number", "minimum": 0, "maximum": 100 },
+            "components": {
+              "type": "object",
+              "properties": {
+                "soil_moisture": { "$ref": "#/$defs/input_component" },
+                "weather_stress": { "$ref": "#/$defs/input_component" },
+                "photo_health": { "$ref": "#/$defs/input_component" },
+                "ndvi": { "$ref": "#/$defs/input_component" }
+              }
+            }
+          }
+        },
+        "revenue": {
+          "type": "object",
+          "required": ["formula_version", "currency", "net_impact", "assumptions"],
+          "properties": {
+            "formula_version": { "type": "string" },
+            "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+            "expected_yield_kg": { "type": "number" },
+            "grade_adjusted_price_per_kg": { "type": "number" },
+            "action_cost": { "type": "number" },
+            "risk_discount": { "type": "number" },
+            "net_impact": { "type": "number", "description": "yield x grade_price - action_cost - risk_discount, relative to the do-nothing baseline" },
+            "loss_if_ignored": { "type": ["number", "null"] },
+            "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+            "assumptions": {
+              "type": "object",
+              "required": ["price_source", "yield_baseline", "risk_discount_rate"],
+              "properties": {
+                "price_source": { "type": "string" },
+                "price_observed_at": { "type": "string", "format": "date-time" },
+                "yield_baseline": { "type": "string" },
+                "risk_discount_rate": { "type": "number" },
+                "estimated": { "const": true }
+              }
+            }
+          }
+        },
+        "action": {
+          "type": "object",
+          "required": ["template_key"],
+          "properties": {
+            "template_key": { "type": "string", "description": "Key into the pack's message templates; text is rendered per language at delivery." },
+            "params": { "type": "object" },
+            "act_by": { "type": ["string", "null"], "format": "date-time" },
+            "reference": { "type": "string", "description": "Public agronomic source the threshold came from." }
+          }
+        },
+        "guardrail": {
+          "type": "object",
+          "required": ["ruleset", "pre", "post"],
+          "properties": {
+            "ruleset": { "type": "string", "description": "e.g. in@2026.09" },
+            "pre": { "enum": ["pass", "block"] },
+            "post": { "enum": ["pass", "modified", "block"] },
+            "rules_triggered": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "model_versions": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "required": ["channel", "language", "status"],
+      "properties": {
+        "channel": { "enum": ["chat", "voice", "sms", "whatsapp"] },
+        "language": { "type": "string" },
+        "status": { "enum": ["queued", "sent", "delivered", "failed"] },
+        "provider_ref": { "type": "string" }
+      }
+    },
+    "response": {
+      "type": "object",
+      "required": ["acted"],
+      "properties": {
+        "acted": { "enum": ["yes", "partial", "no", "unknown"] },
+        "reason": { "type": "string" },
+        "reported_via": { "enum": ["sms_reply", "whatsapp_reply", "chat", "sensor_inferred"] }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "required": ["measured_at", "method"],
+      "properties": {
+        "measured_at": { "type": "string", "format": "date-time" },
+        "method": { "enum": ["sensor_delta", "ndvi_delta", "sale_record", "farmer_reported"] },
+        "realized_impact": { "type": ["number", "null"] },
+        "currency": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{"ts": "2026-09-30T14:24:16.713342+00:00", "stage": "pre", "result": "pass", "ruleset": "in@2026.09", "rules_triggered": []}
+{"ts": "2026-09-30T14:24:16.714203+00:00", "stage": "post", "result": "pass", "ruleset": "in@2026.09", "rules_triggered": [], "farm_region": null}
+{"ts": "2026-09-30T14:24:16.723361+00:00", "stage": "pre", "result": "pass", "ruleset": "in@2026.09", "rules_triggered": []}
+{"ts": "2026-09-30T14:24:16.723476+00:00", "stage": "post", "result": "pass", "ruleset": "in@2026.09", "rules_triggered": [], "farm_region": null}
+{"ts": "2026-09-30T14:24:41.772838+00:00", "stage": "pre", "result": "pass", "ruleset": "in@2026.09", "rules_triggered": []}
+{"ts": "2026-09-30T14:24:41.773280+00:00", "stage": "post", "result": "pass", "ruleset": "in@2026.09", "rules_triggered": [], "farm_region": null}
+{"ts": "2026-09-30T14:24:41.780391+00:00", "stage": "pre", "result": "pass", "ruleset": "in@2026.09", "rules_triggered": []}
+{"ts": "2026-09-30T14:24:41.780499+00:00", "stage": "post", "result": "pass", "ruleset": "in@2026.09", "rules_triggered": [], "farm_region": null}
+{"ts": "2026-09-30T15:13:07.457685+00:00", "stage": "pre", "result": "pass", "ruleset": "in@2026.09", "rules_triggered": []}
+{"ts": "2026-09-30T15:13:07.458382+00:00", "stage": "post", "result": "pass", "ruleset": "in@2026.09", "rules_triggered": [], "farm_region": null}
+{"ts": "2026-09-30T15:13:07.465342+00:00", "stage": "pre", "result": "pass", "ruleset": "in@2026.09", "rules_triggered": []}
+{"ts": "2026-09-30T15:13:07.465584+00:00", "stage": "post", "result": "pass", "ruleset": "in@2026.09", "rules_triggered": [], "farm_region": null}

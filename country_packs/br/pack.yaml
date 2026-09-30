@@ -1,0 +1,56 @@
+pack_format: 1
+meta:
+  code: BR
+  name: Brazil
+  completeness: thin
+  maintainer: fasalsetu-core
+  data_provenance: "No soil data bundled. Soil-card mapping is a stub pending access to national soil data."
+locale:
+  default_language: pt
+  languages:
+    pt: { name: Portuguese, stt: whisper, tts: gtts, translate_code: pt }
+    en: { name: English,    stt: whisper, tts: gtts, translate_code: en }
+  units: { area: hectare, mass: kg, price_per: saca_60kg, currency: BRL }
+crops:
+  soybean:
+    seasons: [summer]
+    yield_baseline: { value_kg_per_ha: null, source: "TODO: CONAB series" }   # null -> low-confidence flag
+    grades: [A, B]
+    grade_price_factor: { A: 1.00, B: 0.95 }
+compliance:
+  ruleset: br@2026.09
+  authority: "MAPA / ANVISA / IBAMA"
+  retrieved_on: "VERIFY"
+  banned:                      # illustrative seed; verify before use
+    - { substance: paraquat, source: "ANVISA ban (verify effective date)" }
+  restricted: []
+  regional: {}
+  audit_log: jsonl
+market:
+  price_source: { name: "CONAB / CEPEA", kind: api, refresh_hours: 24 }   # TODO confirm access
+  support_price: { name: "PGPM minimum prices", source: "CONAB" }
+soil_card:
+  name: "TODO national soil data"
+  map: {}
+sensing:
+  weather: { provider: openweathermap }
+  satellite: { provider: sentinel-2, collection: "COPERNICUS/S2_SR_HARMONIZED", index: [ndvi, ndwi] }
+  climate_history: { provider: nasa-power }
+revenue:
+  currency: BRL
+  formula_version: "1.0"
+  risk_discount_rate: 0.10
+  do_nothing_threshold: 10
+  show_assumptions: true
+models:
+  npk: { status: retrain_required }
+  fertilizer: { status: retrain_required }   # India-trained RF must not be reused on tropical Brazilian soils
+  disease: { status: reuse, card: schemas/model_cards/disease_efficientnet.md }  # limited to PlantVillage crops
+  grading: { status: retrain_required }
+delivery:
+  channels: [chat, whatsapp]
+  reply_codes: { "1": done, "2": not_done, "3": need_help }
+schemes: { corpus: null }
+data:
+  residency: br
+  pii_in_event_log: false

@@ -1,0 +1,14 @@
+# Local Soil Health Card scraper — dependencies
+# (pyppdf removed vs. the original repo's requirements.txt: it's listed there
+#  but never actually imported anywhere in the codebase, and it fails to
+#  install on Python 3.12+ due to a removed stdlib API. Safe to drop.)
+# (google-cloud-storage / google-cloud-spanner / google-cloud-logging removed:
+#  replaced by local disk + SQLite in this fork.)
+
+requests
+nest-asyncio
+pyppeteer
+absl-py
+bs4
+shapely
+protobuf==3.20.*

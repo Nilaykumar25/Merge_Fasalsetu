@@ -1,0 +1,84 @@
+pack_format: 1
+meta:
+  code: IN
+  name: India
+  completeness: full
+  maintainer: fasalsetu-core
+  data_provenance: >
+    SHC samples (Haryana, Rajasthan) are a DEMO dataset recovered from a public repository
+    history; licence not yet confirmed. Path to official access: Soil Health Card portal / data.gov.in.
+locale:
+  default_language: hi
+  languages:
+    hi: { name: Hindi,   stt: whisper, tts: gtts, translate_code: hi }
+    en: { name: English, stt: whisper, tts: gtts, translate_code: en }
+    mr: { name: Marathi, stt: whisper, tts: gtts, translate_code: mr }
+    ta: { name: Tamil,   stt: whisper, tts: gtts, translate_code: ta }
+    te: { name: Telugu,  stt: whisper, tts: gtts, translate_code: te }
+    # ... remaining languages to reach 8
+  units: { area: hectare, mass: kg, price_per: quintal, currency: INR }
+crops:
+  wheat:
+    seasons: [rabi]
+    yield_baseline: { value_kg_per_ha: 3200, source: "state agriculture statistics (to cite)" }
+    grades: [A, B, C]
+    grade_price_factor: { A: 1.05, B: 1.00, C: 0.90 }
+  mustard:
+    seasons: [rabi]
+    yield_baseline: { value_kg_per_ha: 1400, source: "to cite" }
+    grades: [A, B, C]
+    grade_price_factor: { A: 1.04, B: 1.00, C: 0.92 }
+  # extend: bajra, cotton, tomato ...
+compliance:
+  ruleset: in@2026.09
+  authority: "CIB&RC (Insecticides Act, 1968); state notifications"
+  retrieved_on: "VERIFY"
+  banned:                      # illustrative seed; verify before use
+    - { substance: endosulfan,    source: "CIB&RC / Supreme Court order" }
+    - { substance: monocrotophos, source: "CIB&RC notification (verify scope)" }
+  restricted:
+    - { substance: glyphosate, source: "CIB&RC: use only by licensed pest control operators (verify)" }
+  regional:
+    KL: { notes: "state-specific restrictions", source: "VERIFY" }
+    MH: { notes: "state-specific restrictions", source: "VERIFY" }
+    PB: { notes: "state-specific restrictions", source: "VERIFY" }
+    HP: { notes: "state-specific restrictions", source: "VERIFY" }
+  audit_log: jsonl
+market:
+  price_source: { name: Agmarknet, kind: api, refresh_hours: 24 }
+  support_price: { name: MSP, source: "CACP / Govt of India" }
+soil_card:
+  name: Soil Health Card
+  map:                         # national field -> internal name
+    pH: ph
+    OC: oc
+    EC: ec
+    N: n
+    P: p
+    K: k
+  units_note: "same physical units as fertilizer RF v2 training data"
+sensing:
+  weather: { provider: openweathermap }
+  satellite: { provider: sentinel-2, collection: "COPERNICUS/S2_SR_HARMONIZED", index: [ndvi, ndwi] }
+  climate_history: { provider: nasa-power }
+revenue:
+  currency: INR
+  formula_version: "1.0"
+  risk_discount_rate: 0.10
+  do_nothing_threshold: 50     # min net gain (INR) to justify alerting
+  show_assumptions: true
+models:
+  npk: { status: reuse, card: schemas/model_cards/npk.md }
+  fertilizer: { status: reuse, card: schemas/model_cards/fertilizer_rf_v2.md }
+  disease: { status: reuse, card: schemas/model_cards/disease_efficientnet.md }
+  grading: { status: reuse, card: schemas/model_cards/grading_rgb.md }
+delivery:
+  channels: [chat, voice, whatsapp, sms]
+  sms: { max_chars: 160, template_set: in_sms_v1 }
+  reply_codes: { "1": done, "2": not_done, "3": need_help }
+schemes:
+  corpus: data/schemes/in.jsonl
+  embed_model: paraphrase-multilingual-MiniLM-L12-v2
+data:
+  residency: in
+  pii_in_event_log: false

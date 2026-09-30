@@ -1,0 +1,777 @@
+openapi: 3.1.0
+info:
+  title: FasalSetu API
+  version: 1.0.0
+  summary: Revenue-first, multilingual agro-advisory API (digital public good).
+  description: |
+    Every recommendation returned by this API has passed through the revenue layer
+    (money impact or an explicit do-nothing) and the compliance guardrail, and has
+    been written to the append-only event log. Money figures are ESTIMATES and always
+    carry their assumptions.
+  license: { name: Apache-2.0, identifier: Apache-2.0 }
+servers:
+  - url: https://api.example.org/v1
+tags:
+  - { name: chat }
+  - { name: farms }
+  - { name: sensing }
+  - { name: tracker }
+  - { name: recommendations }
+  - { name: events }
+  - { name: specialists }
+  - { name: season }
+  - { name: delivery }
+  - { name: packs }
+  - { name: compliance }
+security:
+  - bearerAuth: []
+paths:
+  /chat:
+    post:
+      tags: [chat]
+      summary: Conversational entry point (text or voice). Gemini-based orchestrator routes to specialist agents.
+      description: |
+        Returns `reply` plus `recommendations[]`. The FasalSetu frontend renders one inline card per
+        recommendation and must not recompute any figure. LLM output never supplies money values.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChatRequest' }
+      responses:
+        '200':
+          description: Reply plus any recommendations it produced.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChatResponse' }
+        '422': { $ref: '#/components/responses/Blocked' }
+
+  /farms:
+    post:
+      tags: [farms]
+      summary: Register a farm (country pack selects rules, languages, schema mapping).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FarmCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Farm' }
+  /farms/{farmId}/plots:
+    parameters: [{ $ref: '#/components/parameters/farmId' }]
+    post:
+      tags: [farms]
+      summary: Add a plot (GPS point enables satellite + SHC lookup).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PlotCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Plot' }
+
+  /plots/{plotId}/readings:
+    parameters: [{ $ref: '#/components/parameters/plotId' }]
+    post:
+      tags: [sensing]
+      summary: Ingest a soil sensor reading. `source` must say real or simulated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SensorReading' }
+      responses:
+        '202': { description: Accepted }
+  /plots/{plotId}/photos:
+    parameters: [{ $ref: '#/components/parameters/plotId' }]
+    post:
+      tags: [sensing]
+      summary: Upload a field photo (feeds photo_health in the tracker).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image: { type: string, format: binary }
+      responses:
+        '202': { description: Accepted }
+
+  /plots/{plotId}/condition:
+    parameters: [{ $ref: '#/components/parameters/plotId' }]
+    get:
+      tags: [tracker]
+      summary: Latest Crop Condition score and components.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CropCondition' }
+  /plots/{plotId}/condition/history:
+    parameters: [{ $ref: '#/components/parameters/plotId' }]
+    get:
+      tags: [tracker]
+      summary: Daily score series.
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CropCondition' }
+
+  /plots/{plotId}/recommendations:
+    parameters: [{ $ref: '#/components/parameters/plotId' }]
+    get:
+      tags: [recommendations]
+      summary: Current recommendation (may be do-nothing) and recent history.
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Recommendation' }
+    post:
+      tags: [recommendations]
+      summary: Run the full pipeline now (tracker, agents, revenue, guardrail, log, deliver).
+      responses:
+        '201':
+          description: Winning recommendation.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Recommendation' }
+
+  /events:
+    post:
+      tags: [events]
+      summary: Append a response or outcome event linked to a recommendation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventAppend' }
+      responses:
+        '201':
+          description: Appended
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventEnvelope' }
+    get:
+      tags: [events]
+      summary: Query the event log (scoped to caller's farms).
+      parameters:
+        - { name: farm_id, in: query, schema: { type: string } }
+        - { name: plot_id, in: query, schema: { type: string } }
+        - { name: event_type, in: query, schema: { type: string, enum: [recommendation, delivery, response, outcome] } }
+        - { name: since, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/EventEnvelope' }
+  /events/{eventId}:
+    get:
+      tags: [events]
+      parameters: [{ name: eventId, in: path, required: true, schema: { type: string, format: uuid } }]
+      summary: One event with its linked children.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventEnvelope' }
+  /events/schema:
+    get:
+      tags: [events]
+      summary: The published JSON Schema for the event (for other countries to validate against).
+      security: []
+      responses:
+        '200': { description: JSON Schema document }
+
+  /plots/{plotId}/irrigation:
+    parameters: [{ $ref: '#/components/parameters/plotId' }]
+    get:
+      tags: [specialists]
+      summary: Irrigation forecast from sensor trend + weather.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IrrigationForecast' }
+  /plots/{plotId}/harvest-window:
+    parameters: [{ $ref: '#/components/parameters/plotId' }]
+    get:
+      tags: [specialists]
+      summary: Recommended harvest window with money impact per day of delay.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HarvestWindow' }
+  /plots/{plotId}/regenerative:
+    parameters: [{ $ref: '#/components/parameters/plotId' }]
+    get:
+      tags: [specialists]
+      summary: Ranked regenerative practices (cover crop, intercrop, residue, tillage, amendments).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Recommendation' }
+  /plots/{plotId}/satellite:
+    parameters: [{ $ref: '#/components/parameters/plotId' }]
+    get:
+      tags: [specialists]
+      summary: Latest Sentinel-2 NDVI/NDWI for the plot.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SatelliteObservation' }
+  /grading:
+    post:
+      tags: [specialists]
+      summary: RGB-based produce grading (not hyperspectral). Returns grade plus price effect.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image, crop, plot_id]
+              properties:
+                image: { type: string, format: binary }
+                crop: { type: string }
+                plot_id: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GradeResult' }
+  /diagnose:
+    post:
+      tags: [specialists]
+      summary: Leaf-photo disease diagnosis (EfficientNet-B0). Treatment text passes the guardrail.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image: { type: string, format: binary }
+                plot_id: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DiseaseResult' }
+  /soil/fertilizer:
+    post:
+      tags: [specialists]
+      summary: Fertilizer recommendation from SHC values (RF v2; rule-based fallback offline).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SoilInput' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Recommendation' }
+  /market/prices:
+    get:
+      tags: [specialists]
+      parameters:
+        - { name: crop, in: query, required: true, schema: { type: string } }
+        - { name: market, in: query, schema: { type: string } }
+      summary: Prices from the country pack's source vs support price, with sell/hold view.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MarketView' }
+  /schemes/search:
+    get:
+      tags: [specialists]
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+        - { name: language, in: query, schema: { type: string } }
+      summary: Semantic search over the country's schemes.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Scheme' }
+
+  /plots/{plotId}/season-review:
+    parameters: [{ $ref: '#/components/parameters/plotId' }]
+    get:
+      tags: [season]
+      summary: 'Season review ("Crop Wrapped") built from the event log.'
+      parameters:
+        - { name: season, in: query, schema: { type: string, example: kharif-2026 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SeasonReview' }
+
+  /webhooks/whatsapp:
+    post:
+      tags: [delivery]
+      summary: Inbound WhatsApp message/status. Replies like "1 = done" become response events.
+      security: [{ webhookSignature: [] }]
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses: { '200': { description: OK } }
+  /webhooks/sms:
+    post:
+      tags: [delivery]
+      summary: Inbound SMS reply or delivery receipt.
+      security: [{ webhookSignature: [] }]
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses: { '200': { description: OK } }
+
+  /country-packs:
+    get:
+      tags: [packs]
+      security: []
+      summary: List installed packs.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PackSummary' }
+  /country-packs/{code}:
+    get:
+      tags: [packs]
+      security: []
+      summary: Public pack metadata (crops, languages, ruleset version, provenance). Secrets excluded.
+      parameters: [{ name: code, in: path, required: true, schema: { type: string, pattern: '^[A-Z]{2}$' } }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PackSummary' }
+  /guardrail/audit:
+    get:
+      tags: [compliance]
+      summary: >
+        Recent guardrail audit entries. Only available when FS_EXPOSE_AUDIT=true
+        (automatically set when FS_SEED_DEMO=true). Never returns raw query text
+        or personal data.
+      description: |
+        Returns the most recent guardrail check records from the server-side JSONL audit log.
+        Enabled only when FS_EXPOSE_AUDIT=true. Returns 403 otherwise.
+        Each entry reflects one pre- or post-execution guardrail run.
+      parameters:
+        - name: last_n
+          in: query
+          schema: { type: integer, default: 20, minimum: 1, maximum: 100 }
+          description: Number of most recent entries to return.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entries]
+                properties:
+                  entries:
+                    type: array
+                    items: { $ref: '#/components/schemas/AuditEntry' }
+        '403':
+          description: Audit endpoint is disabled (FS_EXPOSE_AUDIT is false).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /health:
+    get:
+      security: []
+      summary: Liveness plus which models and data sources are real vs demo.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }
+    webhookSignature: { type: apiKey, in: header, name: X-Signature }
+  parameters:
+    farmId: { name: farmId, in: path, required: true, schema: { type: string } }
+    plotId: { name: plotId, in: path, required: true, schema: { type: string } }
+  responses:
+    Blocked:
+      description: Blocked by the pre-execution guardrail (e.g. banned pesticide). Logged to audit trail.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    Problem:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, example: GUARDRAIL_BLOCK }
+        message: { type: string }
+        rules_triggered: { type: array, items: { type: string } }
+    AuditEntry:
+      type: object
+      required: [event_id, occurred_at, ruleset, pre, post]
+      description: >
+        One guardrail check record. Never contains raw query text or personal data.
+        Enabled only when FS_EXPOSE_AUDIT=true.
+      properties:
+        event_id:
+          type: [string, 'null']
+          format: uuid
+          description: The recommendation event_id this check relates to, if applicable.
+        occurred_at: { type: string, format: date-time }
+        ruleset:
+          type: string
+          example: in@2026.09
+          description: The pack ruleset active at the time of the check.
+        pre:
+          type: string
+          enum: [pass, block]
+          description: Result of the pre-execution check.
+        post:
+          type: string
+          enum: [pass, modified, block]
+          description: Result of the post-execution check.
+        rules_triggered:
+          type: array
+          items: { type: string }
+          description: Names of rules that matched (substance names, not query text).
+    SourceTag:
+      type: string
+      enum: [real, simulated, satellite, api, farmer_reported]
+    ChatRequest:
+      type: object
+      required: [farm_id, input]
+      properties:
+        farm_id: { type: string }
+        plot_id: { type: string }
+        language: { type: string, example: hi }
+        input:
+          type: object
+          properties:
+            text: { type: string }
+            audio_base64: { type: string }
+            image_base64: { type: string }
+    ChatResponse:
+      type: object
+      required: [reply, language]
+      properties:
+        reply: { type: string }
+        language: { type: string }
+        audio_url: { type: string }
+        recommendations:
+          type: array
+          items: { $ref: '#/components/schemas/Recommendation' }
+        agents_used: { type: array, items: { type: string } }
+    FarmCreate:
+      type: object
+      required: [country, preferred_language, channel]
+      properties:
+        country: { type: string, pattern: '^[A-Z]{2}$' }
+        region: { type: string }
+        preferred_language: { type: string }
+        channel: { type: string, enum: [chat, sms, whatsapp, voice] }
+        contact: { type: string, description: Stored in-country only; never enters the event log. }
+    Farm:
+      allOf:
+        - $ref: '#/components/schemas/FarmCreate'
+        - type: object
+          properties:
+            farm_id: { type: string }
+    PlotCreate:
+      type: object
+      required: [crop, lat, lon, area_ha]
+      properties:
+        crop: { type: string }
+        variety: { type: string }
+        sowing_date: { type: string, format: date }
+        lat: { type: number }
+        lon: { type: number }
+        area_ha: { type: number }
+        irrigation_type: { type: string }
+    Plot:
+      allOf:
+        - $ref: '#/components/schemas/PlotCreate'
+        - type: object
+          properties:
+            plot_id: { type: string }
+            farm_id: { type: string }
+    SensorReading:
+      type: object
+      required: [observed_at, source, soil_moisture_pct]
+      properties:
+        observed_at: { type: string, format: date-time }
+        source: { $ref: '#/components/schemas/SourceTag' }
+        soil_moisture_pct: { type: number }
+        soil_temp_c: { type: number }
+        device_id: { type: string }
+    InputComponent:
+      type: object
+      required: [value, source]
+      properties:
+        value: { type: [number, 'null'] }
+        unit: { type: string }
+        source: { $ref: '#/components/schemas/SourceTag' }
+        observed_at: { type: string, format: date-time }
+    CropCondition:
+      type: object
+      required: [plot_id, date, score, components]
+      properties:
+        plot_id: { type: string }
+        date: { type: string, format: date }
+        score: { type: number, minimum: 0, maximum: 100 }
+        band: { type: string, enum: [good, watch, stressed, critical] }
+        components:
+          type: object
+          properties:
+            soil_moisture: { $ref: '#/components/schemas/InputComponent' }
+            weather_stress: { $ref: '#/components/schemas/InputComponent' }
+            photo_health: { $ref: '#/components/schemas/InputComponent' }
+            ndvi: { $ref: '#/components/schemas/InputComponent' }
+    RevenueImpact:
+      type: object
+      required: [currency, net_impact, assumptions]
+      properties:
+        formula_version: { type: string }
+        currency: { type: string }
+        expected_yield_kg: { type: number }
+        grade_adjusted_price_per_kg: { type: number }
+        action_cost: { type: number }
+        risk_discount: { type: number }
+        net_impact: { type: number }
+        loss_if_ignored: { type: [number, 'null'] }
+        confidence: { type: number }
+        assumptions:
+          type: object
+          required: [price_source, yield_baseline, risk_discount_rate]
+          properties:
+            price_source: { type: string }
+            price_observed_at: { type: string, format: date-time }
+            yield_baseline: { type: string }
+            risk_discount_rate: { type: number }
+            estimated: { type: boolean, const: true }
+    GuardrailResult:
+      type: object
+      properties:
+        ruleset: { type: string }
+        pre: { type: string, enum: [pass, block] }
+        post: { type: string, enum: [pass, modified, block] }
+        rules_triggered: { type: array, items: { type: string } }
+    Recommendation:
+      type: object
+      required: [event_id, agent, category, is_do_nothing, text, revenue, guardrail]
+      properties:
+        event_id: { type: string, format: uuid, description: The logged recommendation event. }
+        agent: { type: string }
+        category: { type: string }
+        is_do_nothing: { type: boolean }
+        text: { type: string, description: Rendered in the farmer's language. }
+        act_by: { type: [string, 'null'], format: date-time }
+        revenue: { $ref: '#/components/schemas/RevenueImpact' }
+        guardrail: { $ref: '#/components/schemas/GuardrailResult' }
+        reference: { type: string }
+    EventAppend:
+      type: object
+      required: [parent_event_id, event_type, payload]
+      properties:
+        parent_event_id: { type: string, format: uuid }
+        event_type: { type: string, enum: [response, outcome] }
+        payload: { type: object, description: Validated against the published event schema. }
+    EventEnvelope:
+      type: object
+      description: See /events/schema for the authoritative definition.
+      additionalProperties: true
+    IrrigationForecast:
+      type: object
+      properties:
+        next_irrigation_at: { type: [string, 'null'], format: date-time }
+        moisture_trend: { type: array, items: { type: object, properties: { t: { type: string, format: date-time }, pct: { type: number }, forecast: { type: boolean } } } }
+        recommendation: { $ref: '#/components/schemas/Recommendation' }
+    HarvestWindow:
+      type: object
+      properties:
+        start: { type: string, format: date }
+        end: { type: string, format: date }
+        loss_per_day_delay: { type: number }
+        recommendation: { $ref: '#/components/schemas/Recommendation' }
+    SatelliteObservation:
+      type: object
+      properties:
+        observed_at: { type: string, format: date }
+        ndvi: { type: number }
+        ndwi: { type: number }
+        cloud_cover_pct: { type: number }
+        provider: { type: string, example: Sentinel-2 L2A }
+    GradeResult:
+      type: object
+      properties:
+        grade: { type: string }
+        confidence: { type: number }
+        method: { type: string, const: rgb-opencv }
+        limitations: { type: string, example: RGB only; not hyperspectral. }
+        price_effect_per_kg: { type: number }
+        recommendation: { $ref: '#/components/schemas/Recommendation' }
+    DiseaseResult:
+      type: object
+      properties:
+        label: { type: string }
+        confidence: { type: number }
+        top_k: { type: array, items: { type: object, properties: { label: { type: string }, p: { type: number } } } }
+        recommendation: { $ref: '#/components/schemas/Recommendation' }
+    SoilInput:
+      type: object
+      required: [ph, organic_carbon, ec, crop]
+      properties:
+        crop: { type: string }
+        ph: { type: number }
+        organic_carbon: { type: number }
+        ec: { type: number }
+        n: { type: number }
+        p: { type: number }
+        k: { type: number }
+        plot_id: { type: string }
+    MarketView:
+      type: object
+      properties:
+        crop: { type: string }
+        price_per_quintal: { type: number }
+        support_price: { type: [number, 'null'] }
+        source: { type: string }
+        observed_at: { type: string, format: date-time }
+        advice: { type: string, enum: [sell, hold, unknown] }
+    Scheme:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        summary: { type: string }
+        eligibility: { type: string }
+        url: { type: string }
+        score: { type: number }
+        benefit_type:
+          type: string
+          description: "Optional. e.g. SUBSIDY, DIRECT_TRANSFER, INSURANCE, CREDIT, MSP"
+        benefit_amount:
+          type: [string, 'null']
+          description: "Optional. Human-readable benefit amount or range, e.g. '₹6,000/year' or 'Up to 50%'."
+        level:
+          type: string
+          description: "Optional. CENTRAL or STATE."
+          enum: [CENTRAL, STATE]
+        state:
+          type: [string, 'null']
+          description: "Optional. State name if level=STATE; null for central schemes."
+    SeasonReview:
+      type: object
+      properties:
+        plot_id: { type: string }
+        season: { type: string }
+        currency: { type: string }
+        actions_recommended: { type: integer }
+        actions_taken: { type: integer }
+        do_nothing_calls: { type: integer }
+        predicted_impact_taken: { type: number }
+        realized_impact: { type: [number, 'null'] }
+        timeline: { type: array, items: { $ref: '#/components/schemas/Recommendation' } }
+        next_season_adjustments: { type: array, items: { type: string } }
+    PackSummary:
+      type: object
+      properties:
+        code: { type: string }
+        name: { type: string }
+        languages: { type: array, items: { type: string } }
+        crops: { type: array, items: { type: string } }
+        currency: { type: string }
+        guardrail_ruleset: { type: string }
+        completeness: { type: string, enum: [full, thin] }
+        data_provenance: { type: string }
+        compliance_substances:
+          type: object
+          description: >
+            Public read-only substance lists from the pack's compliance section.
+            All entries reflect the seed lists; set verified=false until confirmed
+            against the national regulator.
+          properties:
+            banned:
+              type: array
+              items: { $ref: '#/components/schemas/ComplianceSubstance' }
+            restricted:
+              type: array
+              items: { $ref: '#/components/schemas/ComplianceSubstance' }
+    ComplianceSubstance:
+      type: object
+      required: [substance, source, retrieved_on, verified]
+      properties:
+        substance: { type: string, example: endosulfan }
+        source:
+          type: string
+          example: "CIB&RC / Supreme Court order"
+          description: Regulatory authority or citation that establishes the restriction.
+        retrieved_on:
+          type: string
+          description: Date the entry was last verified against the authority source.
+          example: "VERIFY"
+        verified:
+          type: boolean
+          description: >
+            false for all current seed entries — these are illustrative only and must
+            be verified against the national regulator before any real use.
+    Health:
+      type: object
+      properties:
+        status: { type: string }
+        models: { type: object, additionalProperties: { type: string } }
+        data: { type: object, additionalProperties: { type: string, enum: [real, demo, simulated] } }

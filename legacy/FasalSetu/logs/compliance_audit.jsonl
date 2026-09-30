@@ -1,0 +1,7 @@
+{"timestamp": "2026-03-29T13:20:41", "agent": "orchestrator", "violations": [], "warnings": [], "blocked": false}
+{"timestamp": "2026-03-29T13:20:53", "agent": "orchestrator", "violations": [], "warnings": [], "blocked": false}
+{"timestamp": "2026-03-29T13:21:12", "agent": "orchestrator", "violations": [], "warnings": [], "blocked": false}
+{"timestamp": "2026-03-29T14:00:25", "agent": "orchestrator", "violations": [], "warnings": [], "blocked": false}
+{"timestamp": "2026-03-29T17:57:17", "agent": "orchestrator", "violations": [], "warnings": [], "blocked": false}
+{"timestamp": "2026-03-29T18:51:27", "agent": "orchestrator", "violations": ["BANNED: 'Endosulfan' is banned under the Insecticides Act 1968."], "warnings": [], "blocked": true}
+{"timestamp": "2026-03-29T19:56:36", "schema_ver": "1.1", "phase": "pre_execution", "session_id": "test-123", "reason": "Query requests use of a globally banned substance", "query": "how do I use DDT on my wheat crop?", "blocked": true, "severity": "HIGH"}
