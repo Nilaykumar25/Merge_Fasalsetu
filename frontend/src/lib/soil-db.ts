@@ -54,7 +54,7 @@ async function generateSoilDataWithGemini(latitude: number, longitude: number, c
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     const locationStr = city && state ? `${city}, ${state}, ${country}` : `coordinates ${latitude}, ${longitude}`;
     

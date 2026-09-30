@@ -77,7 +77,7 @@ export async function createSuggestion(
         crop_context: suggestionData.crop_context,
         confidence_score: suggestionData.confidence_score,
         expires_at: suggestionData.expires_at,
-        ai_model: 'gemini-2.0-flash-exp',
+        ai_model: 'gemini-2.0-flash',
         is_active: true
       })
       .select()
