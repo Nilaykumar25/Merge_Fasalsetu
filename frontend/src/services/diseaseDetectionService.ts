@@ -1,6 +1,6 @@
-// diseaseDetectionService.ts — matches your HomePage.tsx result shape exactly
+// diseaseDetectionService.ts — calls FastAPI /disease/detect (Gemini Vision)
 
-const MODEL_API_URL = (import.meta as any).env.VITE_MODEL_API_URL;
+const BACKEND_URL = (import.meta as any).env?.VITE_SOIL_NPK_API_URL ?? 'http://localhost:8000';
 
 // ── Result shape your component expects ───────────────────────────────────────
 export interface StructuredResult {
@@ -32,14 +32,14 @@ function base64ToFile(base64: string, filename = 'crop.jpg'): File {
   return new File([arr], filename, { type: mime });
 }
 
-// ── Call Flask backend ────────────────────────────────────────────────────────
+// ── Call FastAPI /disease/detect ─────────────────────────────────────────────
 async function callBackend(file: File): Promise<any> {
   const formData = new FormData();
-  formData.append('file', file, file.name);   // file is a proper Blob — no error
+  formData.append('file', file, file.name);
 
-  const res = await fetch(`${MODEL_API_URL}/predict`, {
+  const res = await fetch(`${BACKEND_URL}/disease/detect`, {
     method: 'POST',
-    body  : formData
+    body  : formData,
   });
 
   if (!res.ok) {
